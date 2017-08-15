@@ -218,4 +218,9 @@ Update the user form to expect passwords rather than hashes
 
 Sugar sweet.  users/new gives us a decent sign up page.
 Show gives us a details page. And on edit they can update their details.
-List is somethign that only
+
+It's unlikely that we want users to be able to update or delete other users - some kind of anarchic social media? Could be good. But usually we need some way of protecting pages.
+
+##Tokens
+
+In our HTTP web interface we want someway of knowing who it is making the requests.  To do this we will create a token issuing system.  Users can request a token verifying their identity,  they can then use this token in subsequent requests to confirm their identity.
