@@ -189,7 +189,7 @@ end
 ```
 
 We setup our database to have a to create unique index for users,  let's test this.
-accounts_test.exs 
+accounts_test.exs
 ```elixir
 test "create_user/1 with taken email returns error changeset" do
   {:ok, %User{} = _} = Accounts.create_user(@valid_attrs)
@@ -197,7 +197,25 @@ test "create_user/1 with taken email returns error changeset" do
 end
 ```
 
+Great our system is working nicely.  Feel free to add more validations for our user. Let's now update our web interface to use our new system.
+
 ##Web interface for accounts system
-<!-- We will do this by allowing them to get a form.
-http://localhost:4000/registrations/new -->
-resources "/users", UserController
+mix phx.server
+Update the user form to expect passwords rather than hashes
+```elixir
+  <div class="form-group">
+    <%= label f, :email, class: "control-label" %>
+    <%= email_input f, :email, class: "form-control" %>
+    <%= error_tag f, :email %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :password, class: "control-label" %>
+    <%= password_input f, :password, class: "form-control" %>
+    <%= error_tag f, :password %>
+  </div>
+```
+
+Sugar sweet.  users/new gives us a decent sign up page.
+Show gives us a details page. And on edit they can update their details.
+List is somethign that only
