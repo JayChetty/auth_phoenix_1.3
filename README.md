@@ -86,58 +86,45 @@ end
 ####Hashing passwords
 Great  now our system will take in passwords, and store a hash. Let's actually hash them using the comeonin library.
 
-Testing randomness? Hard, and we'll trust comonin to be doing it's job.  We'll make our system be able to take in a hashing algorithm so we can test it with a simple one,  by default it will use come one in.
+As our passwords will be hashed we cannot determine what to expect.  We will get by this by loosening the restriction test to just check a password hash exists and it is over length 16.  (We could make the system more flexible here allowing it to receive in a hashing algorithm - allowing us to by-pass the password hashing,  however as I don't see the algorithm needing to change in the future so I feel it is not worth the additional complexity- this is highly debatable.  I also like giving at least giving the hashing algorithm a spin in the test)
+
+<!-- We'll make our system be able to take in a hashing algorithm so we can test it with a simple one,  by default it will use come one in. -->
 
 accounts.test.exs
 ``` elixir
-def dummy_hashing_algorithm(_) do
-  "password_hash"
-end
+
 
 def user_fixture(attrs \\ %{}) do
   {:ok, user} =
     attrs
     |> Enum.into(@valid_attrs)
-    |> Accounts.create_user(&dummy_hashing_algorithm/1)
+    |> Accounts.create_user()
   user
 end
 ...
 test "create_user/1 with valid data creates a user" do
-  hashing_algorithm = fn(_) -> "password_hash" end
-  assert {:ok, %User{} = user} = Accounts.create_user(@valid_attrs, &dummy_hashing_algorithm/1)
+  assert {:ok, %User{} = user} = Accounts.create_user()
   assert user.email == "some email"
-  assert user.password_hash == "password_hash"
+  assert user.password_hash
+  assert String.length(user.password_hash) > 16
 end
 
-test "create_user/1 with invalid data returns error changeset" do
-  hashing_algorithm = fn(_) -> "password_hash" end
-  assert {:error, %Ecto.Changeset{}} = Accounts.create_user(@invalid_attrs, &dummy_hashing_algorithm/1)
+```
+
+mix.exs
+``` elixir
+defp deps do
+  [...{:comeonin, "~> 4.0"},
+  {:bcrypt_elixir, "~> 0.12.0"}
 end
 ```
 
-accounts.ex
 ```elixir
-  def create_user(attrs \\ %{}, hashing_algorithm) do
-    %User{}
-    |> User.registration_changeset(attrs, hashing_algorithm)
-    |> Repo.insert()
-  end
-```
-
-user.ex
-```elixir
-  def registration_changeset(%User{} = user, attrs, hashing_algorithm) do
-    user
-    |> changeset(attrs)
-    |> cast(attrs, [:password])
-    |> put_pass_hash(hashing_algorithm)
-  end
-
-  def put_pass_hash(changeset, hashing_algorithm) do
+  def put_pass_hash(changeset, ) do
     case changeset do
       %Ecto.Changeset{valid?: true, changes: %{password: password}} ->
         changeset
-          |> put_change(:password_hash, hashing_algorithm.(password))
+          |> put_change(:password_hash, Comeonin.Bcrypt.hashpwsalt(password))
           |> put_change(:password, nil)
       _ ->
         changeset
@@ -153,33 +140,13 @@ test "create_user/1 with no algorithm uses default hashing algorithm" do
   assert user.password_hash
 end
 ```
-mix.exs
-``` elixir
-defp deps do
-  [...{:comeonin, "~> 4.0"},
-  {:bcrypt_elixir, "~> 0.12.0"}
-end
-```
-mix deps.get
-accounts.ex
+
+Algorithm intentially slow.  Let's speed it up for tests.
+
+config/test/exs
 ```elixir
-  def create_user(attrs \\ %{}, hashing_algorithm \\ &default_hashing_algorithm/1) do
-    %User{}
-    |> User.registration_changeset(attrs, hashing_algorithm)
-    |> Repo.insert()
-  end
-
-  def default_hashing_algorithm(password) do
-    Comeonin.Bcrypt.hashpwsalt(password)
-  end
+  config :bcrypt_elixir, :log_rounds, 4
 ```
-<!-- Let's set up our test to expect a password -->
-<!-- We would like to be able to create users and store them in the database.  
-
-Phoenix uses the Ecto library to handle data persitance.  We can use the command line tools to help us generate a schema for the User table. -->
-
-
-
 
 
 ###Web interface for accounts system

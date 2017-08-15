@@ -49,14 +49,10 @@ defmodule Auth.Accounts do
       {:error, %Ecto.Changeset{}}
 
   """
-  def create_user(attrs \\ %{}, hashing_algorithm \\ &default_hashing_algorithm/1) do
+  def create_user(attrs \\ %{}) do
     %User{}
-    |> User.registration_changeset(attrs, hashing_algorithm)
+    |> User.registration_changeset(attrs)
     |> Repo.insert()
-  end
-
-  def default_hashing_algorithm(password) do
-    Comeonin.Bcrypt.hashpwsalt(password)
   end
 
   @doc """

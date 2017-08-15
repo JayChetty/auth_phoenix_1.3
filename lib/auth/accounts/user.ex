@@ -19,18 +19,18 @@ defmodule Auth.Accounts.User do
     |> validate_required([:email])
   end
 
-  def registration_changeset(%User{} = user, attrs, hashing_algorithm) do
+  def registration_changeset(%User{} = user, attrs) do
     user
     |> changeset(attrs)
     |> cast(attrs, [:password])
-    |> put_pass_hash(hashing_algorithm)
+    |> put_pass_hash()
   end
 
-  def put_pass_hash(changeset, hashing_algorithm) do
+  def put_pass_hash(changeset) do
     case changeset do
       %Ecto.Changeset{valid?: true, changes: %{password: password}} ->
         changeset
-          |> put_change(:password_hash, hashing_algorithm.(password))
+          |> put_change(:password_hash, Comeonin.Bcrypt.hashpwsalt(password))
           |> put_change(:password, nil)
       _ ->
         changeset

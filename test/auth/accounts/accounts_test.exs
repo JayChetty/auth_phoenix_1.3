@@ -10,15 +10,12 @@ defmodule Auth.AccountsTest do
     @update_attrs %{email: "some updated email"}
     @invalid_attrs %{email: nil, password_hash: nil}
 
-    def dummy_hashing_algorithm(_) do
-      "password_hash"
-    end
 
     def user_fixture(attrs \\ %{}) do
       {:ok, user} =
         attrs
         |> Enum.into(@valid_attrs)
-        |> Accounts.create_user(&Auth.AccountsTest.dummy_hashing_algorithm/1)
+        |> Accounts.create_user()
       user
     end
 
@@ -33,14 +30,15 @@ defmodule Auth.AccountsTest do
     end
 
     test "create_user/1 with valid data creates a user" do
-      assert {:ok, %User{} = user} = Accounts.create_user(@valid_attrs, &Auth.AccountsTest.dummy_hashing_algorithm/1)
+      assert {:ok, %User{} = user} = Accounts.create_user(@valid_attrs)
       assert user.email == "some email"
-      assert user.password_hash == "password_hash"
+      assert user.password_hash
+      assert String.length(user.password_hash) > 16
     end
 
     test "create_user/1 with invalid data returns error changeset" do
       hashing_algorithm = fn(_) -> "password_hash" end
-      assert {:error, %Ecto.Changeset{}} = Accounts.create_user(@invalid_attrs, &Auth.AccountsTest.dummy_hashing_algorithm/1)
+      assert {:error, %Ecto.Changeset{}} = Accounts.create_user(@invalid_attrs)
     end
 
     test "create_user/1 with no algorithm uses default hashing algorithm" do
@@ -55,7 +53,7 @@ defmodule Auth.AccountsTest do
       assert {:ok, user} = Accounts.update_user(user, @update_attrs)
       assert %User{} = user
       assert user.email == "some updated email"
-      assert user.password_hash == "password_hash"
+      assert user.password_hash
     end
 
     test "update_user/2 with invalid data returns error changeset" do
