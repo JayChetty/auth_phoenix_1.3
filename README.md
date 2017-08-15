@@ -15,12 +15,28 @@ Let's build an accounts system to allow for this.
 We will use the phoenix command line generators to create a start point for our user accounts system.  
 
 ```
-  mix phx.gen.html Accounts User users email:string password_hash:string
+  mix phx.gen.html Accounts User users email:unique password_hash:string
+```
+```elixir
+defmodule Play.Repo.Migrations.CreateUsers do
+  use Ecto.Migration
+
+  def change do
+    create table(:users) do
+      add :email, :string
+      add :password_hash, :string
+
+      timestamps()
+    end
+
+    create unique_index(:users, [:email])
+  end
+end
 ```
 This will create the start point for our accounts system, lib/auth/accounts and the web interface lib/auth_web/
 Follow the instructions to add the resource to our router and migrate to create the database table.
 
-###Accounts System
+##Accounts System
 Let's run our tests
 ```
  mix test
@@ -43,7 +59,7 @@ go to localhost:4000/users/new
 
 This is almost what we wanted right.  Cool, thanks phoenix.  But we shouldn't expect our users to hash their own password.  We'll do that for them (aren't we kind).  Let's alter our system to do this.
 
-####Setting up Password Hashing
+###Setting up Password Hashing
 Our interface for our accounts system shouldn't deal with hashed passwords. It will do that for us.  Let's alter our tests so that the we use passwords.
 
 ``` elixir
@@ -83,7 +99,7 @@ end
   end
 ```
 
-####Hashing passwords
+###Hashing passwords
 Great  now our system will take in passwords, and store a hash. Let's actually hash them using the comeonin library.
 
 As our passwords will be hashed we cannot determine what to expect.  We will get by this by loosening the restriction test to just check a password hash exists and it is over length 16.  (We could make the system more flexible here allowing it to receive in a hashing algorithm - allowing us to by-pass the password hashing,  however as I don't see the algorithm needing to change in the future so I feel it is not worth the additional complexity- this is highly debatable.  I also like giving at least giving the hashing algorithm a spin in the test)
@@ -141,15 +157,47 @@ test "create_user/1 with no algorithm uses default hashing algorithm" do
 end
 ```
 
-Algorithm intentially slow.  Let's speed it up for tests.
+Algorithm intentionally slow.  Let's speed it up for tests.
 
-config/test/exs
+config/test.exs
 ```elixir
   config :bcrypt_elixir, :log_rounds, 4
 ```
 
 
-###Web interface for accounts system
+###Validations
+Let's make sure our data meets valid.
+
+Email over 8 characters.  Add a test
+```elixir
+test "create_user/1 with short password data returns error changeset" do
+  short_password_attrs = %{ @valid_attrs | password: "pass" }
+  assert {:error, %Ecto.Changeset{}} = Accounts.create_user(short_password_attrs)
+end
+```
+mix test
+
+user.ex
+```elixir
+def registration_changeset(%User{} = user, attrs) do
+  user
+  |> changeset(attrs)
+  |> cast(attrs, [:password])
+  |> validate_length(:password, min: 8)
+  |> put_pass_hash()
+end
+```
+
+We setup our database to have a to create unique index for users,  let's test this.
+accounts_test.exs 
+```elixir
+test "create_user/1 with taken email returns error changeset" do
+  {:ok, %User{} = _} = Accounts.create_user(@valid_attrs)
+  assert {:error, %Ecto.Changeset{}} = Accounts.create_user(@valid_attrs)
+end
+```
+
+##Web interface for accounts system
 <!-- We will do this by allowing them to get a form.
 http://localhost:4000/registrations/new -->
 resources "/users", UserController

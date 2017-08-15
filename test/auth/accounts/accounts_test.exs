@@ -1,13 +1,12 @@
 defmodule Auth.AccountsTest do
   use Auth.DataCase
-
   alias Auth.Accounts
 
   describe "users" do
     alias Auth.Accounts.User
 
-    @valid_attrs %{email: "some email", password: "some password"}
-    @update_attrs %{email: "some updated email"}
+    @valid_attrs %{email: "person@email.com", password: "password"}
+    @update_attrs %{email: "updated@email.com"}
     @invalid_attrs %{email: nil, password_hash: nil}
 
 
@@ -31,20 +30,23 @@ defmodule Auth.AccountsTest do
 
     test "create_user/1 with valid data creates a user" do
       assert {:ok, %User{} = user} = Accounts.create_user(@valid_attrs)
-      assert user.email == "some email"
+      assert user.email == "person@email.com"
       assert user.password_hash
       assert String.length(user.password_hash) > 16
     end
 
+    test "create_user/1 with short password data returns error changeset" do
+      short_password_attrs = %{ @valid_attrs | password: "pass" }
+      assert {:error, %Ecto.Changeset{}} = Accounts.create_user(short_password_attrs)
+    end
+
     test "create_user/1 with invalid data returns error changeset" do
-      hashing_algorithm = fn(_) -> "password_hash" end
       assert {:error, %Ecto.Changeset{}} = Accounts.create_user(@invalid_attrs)
     end
 
-    test "create_user/1 with no algorithm uses default hashing algorithm" do
-      assert {:ok, %User{} = user} = Accounts.create_user(@valid_attrs)
-      assert user.email == "some email"
-      assert user.password_hash
+    test "create_user/1 with taken email returns error changeset" do
+      {:ok, %User{} = _} = Accounts.create_user(@valid_attrs)
+      assert {:error, %Ecto.Changeset{}} = Accounts.create_user(@valid_attrs)
     end
 
 
@@ -52,7 +54,7 @@ defmodule Auth.AccountsTest do
       user = user_fixture()
       assert {:ok, user} = Accounts.update_user(user, @update_attrs)
       assert %User{} = user
-      assert user.email == "some updated email"
+      assert user.email == "updated@email.com"
       assert user.password_hash
     end
 

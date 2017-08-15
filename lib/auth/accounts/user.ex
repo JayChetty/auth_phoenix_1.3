@@ -17,12 +17,15 @@ defmodule Auth.Accounts.User do
     user
     |> cast(attrs, [:email, :password_hash])
     |> validate_required([:email])
+    |> unique_constraint(:email)
+
   end
 
   def registration_changeset(%User{} = user, attrs) do
     user
     |> changeset(attrs)
     |> cast(attrs, [:password])
+    |> validate_length(:password, min: 8)
     |> put_pass_hash()
   end
 
