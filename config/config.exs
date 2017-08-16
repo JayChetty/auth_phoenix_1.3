@@ -35,4 +35,4 @@ config :guardian, Guardian,
   allowed_drift: 2000,
   verify_issuer: true, # optional
   secret_key: "Py/5nlRG23jQ3x1MMEytwZxirEUg+di0EoWBBrIQ5EvzpDHP5P1IlHqpbQHbs623",
-  serializer: MyApp.GuardianSerializer
+  serializer: AuthWeb.GuardianSerializer

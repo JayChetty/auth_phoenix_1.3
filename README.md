@@ -363,12 +363,46 @@ We are going to use the Guardian library to assist with this. (DO I NEED TO DO T
 [SECRET KEYS IN CONFIG ARE THEY SAFE HERE]
 
 https://github.com/ueberauth/guardian
+
+[LOOK FOR BETTER WAYS TO TEST THIS]
 ```elixir
-describe "create user" do
+describe "create session" do
   setup [:create_user]
-  test "puts the user in the session", %{conn: conn} do
-    conn = post conn, session_path(conn, :create)
-    assert html_response(conn, 200) =~ "Login"
+  test "redirects when correct user", %{conn: conn} do
+    conn = post conn, session_path(conn, :create), @create_attrs
+    assert html_response(conn, 302)
+
+  end
+
+  test "give info when incorrect user", %{conn: conn} do
+    wrong_password_attrs = put_in(@create_attrs, [:session, :password], "hackerz")
+    conn = post conn, session_path(conn, :create), wrong_password_attrs
+    Logger.warn ("conn #{inspect conn}")
+    assert html_response(conn, 200)
+    # want a simple test here to check conn has a token
+    # conn.private.guardian_default_resource
   end
 end
 ```
+session_controller.ex
+```elixir
+def create(conn, %{"session" => %{"email" => email, "password" => password}}) do
+  case Auth.Accounts.authenticate_user(%{email: email, password: password}) do
+    {:ok, user} ->
+      conn
+      |> Guardian.Plug.sign_in(user)
+      |> put_flash(:info, "Succesfully signed in.")
+      |> redirect( to: "/" )
+    :error ->
+      conn
+      |> put_flash(:info, "Invalid username/password combination")
+      |> render("new.html")
+  end
+end
+```
+
+Great we now have are delivering tokens when a user is authenticated!
+
+Let's protect some of our resources so the user has to be signed in.
+
+##Protecting Resources
