@@ -288,4 +288,24 @@ touch lib/auth_web/templates/session/new.html.eex
 ```
 mix test test/auth_web/controllers/session_controller_test.exs
 
-And great test passes we have a place for our form.  I'm going to leave the test like that, as I don't want the test to be too brittle if we change the form.  But I like having a simple that runs to check request for a new session is satisfied.
+And great test passes we have a place for our form.  I'm going to leave the test like that, as I don't want the test to be too brittle if we change the form.  But I like having a simple test that runs to check request for a new session is satisfied.
+
+
+lib/auth_web/templates/session/new.html.eex
+``` elixir
+<h2> Login </h2>
+
+<%= form_for @conn, session_path(@conn, :create), [as: :session], fn f -> %>
+  <div class="form-group">
+    <%= label f, :email, class: "control-label" %>
+    <%= email_input f, :email, class: "form-control" %>
+    <%= error_tag f, :email %>
+  </div>
+
+  <div class="form-group">
+    <%= label f, :password, class: "control-label" %>
+    <%= password_input f, :password, class: "form-control" %>
+    <%= error_tag f, :password %>
+  </div>
+<% end %>
+```
