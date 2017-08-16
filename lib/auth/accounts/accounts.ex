@@ -101,4 +101,29 @@ defmodule Auth.Accounts do
   def change_user(%User{} = user) do
     User.changeset(user, %{})
   end
+
+  @doc """
+  Returns a User given email and password.
+
+  ## Examples
+
+      iex> authenticate_user(user)
+      {:ok. %User{}}
+
+  """
+  def authenticate_user( %{email: email, password: password} ) do
+    user = Repo.get_by( User, email: String.downcase(email) )
+    case check_password(user, password) do
+      true ->
+        {:ok, user}
+      _ -> :error
+    end
+  end
+
+  defp check_password(user, password) do
+    case user do
+      nil -> false
+      _ -> Comeonin.Bcrypt.checkpw(password, user.password_hash)
+    end
+  end
 end

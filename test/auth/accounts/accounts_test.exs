@@ -74,5 +74,23 @@ defmodule Auth.AccountsTest do
       user = user_fixture()
       assert %Ecto.Changeset{} = Accounts.change_user(user)
     end
+
+    test "authenticate_user/1 returns ok when correct username password" do
+      user = user_fixture()
+      assert {:ok, found_user} = Accounts.authenticate_user(@valid_attrs)
+      assert user == found_user
+    end
+
+    test "authenticate_user/1 returns error when incorrect password" do
+      _ = user_fixture()
+      wrong_password_attrs = %{@valid_attrs | password: "hackerz"}
+      assert :error = Accounts.authenticate_user(wrong_password_attrs)
+    end
+
+    test "authenticate_user/1 returns error when can't find user" do
+      _ = user_fixture()
+      no_email_attrs = %{@valid_attrs | email: "doesntexist@email.com"}
+      assert :error = Accounts.authenticate_user(no_email_attrs)
+    end
   end
 end

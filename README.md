@@ -309,3 +309,66 @@ lib/auth_web/templates/session/new.html.eex
   </div>
 <% end %>
 ```
+
+Now we want to be give deliver a session token if they user is authenticated.  Let's first write this authenticated function.  It will live in our accounts system.
+
+Let's test certain conditions
+test/auth/accounts/accounts_test.exs
+```elixir    
+  test "authenticate_user/1 returns ok when correct username password" do
+    user = user_fixture()
+    assert {:ok, found_user} = Accounts.authenticate_user(@valid_attrs)
+    assert user == found_user
+  end
+
+  test "authenticate_user/1 returns error when incorrect password" do
+    _ = user_fixture()
+    wrong_password_attrs = %{@valid_attrs | password: "hackerz"}
+    assert :error = Accounts.authenticate_user(wrong_password_attrs)
+  end
+
+  test "authenticate_user/1 returns error when can't find user" do
+    _ = user_fixture()
+    no_email_attrs = %{@valid_attrs | email: "doesntexist@email.com"}
+    assert :error = Accounts.authenticate_user(no_email_attrs)
+    end
+```
+
+
+And let's add in this functionality.
+lib/auth/accounts/accounts.ex
+```elixir
+  def authenticate_user( %{email: email, password: password} ) do
+    user = Repo.get_by( User, email: String.downcase(email) )
+    case check_password(user, password) do
+      true ->
+        {:ok, user}
+      _ -> :error
+    end
+  end
+
+  defp check_password(user, password) do
+    case user do
+      nil -> false
+      _ -> Comeonin.Bcrypt.checkpw(password, user.password_hash)
+    end
+  end
+```
+
+
+Now when we can surface this in our web application on the create route.
+
+We are going to use the Guardian library to assist with this. (DO I NEED TO DO THIS SHOULD I JUST USE PHOENIX.TOKEN?)
+
+[SECRET KEYS IN CONFIG ARE THEY SAFE HERE]
+
+https://github.com/ueberauth/guardian
+```elixir
+describe "create user" do
+  setup [:create_user]
+  test "puts the user in the session", %{conn: conn} do
+    conn = post conn, session_path(conn, :create)
+    assert html_response(conn, 200) =~ "Login"
+  end
+end
+```
