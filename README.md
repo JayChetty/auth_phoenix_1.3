@@ -200,6 +200,14 @@ end
 Great our system is working nicely.  Feel free to add more validations for our user. Let's now update our web interface to use our new system.
 
 ##Web interface for accounts system
+Let's first update our user controller tests to have data that we expect.
+
+Duplication I know,  but a
+
+```elixir
+```
+
+
 mix phx.server
 Update the user form to expect passwords rather than hashes
 ```elixir
@@ -221,6 +229,63 @@ Show gives us a details page. And on edit they can update their details.
 
 It's unlikely that we want users to be able to update or delete other users - some kind of anarchic social media? Could be good. But usually we need some way of protecting pages.
 
-##Tokens
+##Session Tokens
 
 In our HTTP web interface we want someway of knowing who it is making the requests.  To do this we will create a token issuing system.  Users can request a token verifying their identity,  they can then use this token in subsequent requests to confirm their identity.
+
+Getting a token.  Let's create a controller to allow us to create a token.
+
+touch test/auth_web/controllers/session_controller_test.exs
+```elixir
+defmodule AuthWeb.SessionControllerTest do
+  use AuthWeb.ConnCase
+
+
+  describe "new session" do
+    test "renders form", %{conn: conn} do
+      conn = get conn, session_path(conn, :new)
+      assert html_response(conn, 200) =~ "Login"
+    end
+  end
+end
+```
+
+mix test test/auth_web/controllers/session_controller_test.exs
+
+Undefined path session_path.  We need to tell our router about this resource.
+lib/auth_web/router.ex
+```elixir
+resources "/sessions", SessionController, only: [:new, :create]
+```
+
+Now it doesn't know about session controller,  let's solve that.
+touch lib/auth_web/controllers/session_controller.ex
+```elixir
+defmodule AuthWeb.SessionController do
+  use AuthWeb, :controller
+
+  def new(conn, _params) do
+    render conn, "new.html"
+  end
+end
+```
+
+mix test test/auth_web/controllers/session_controller_test.exs
+
+We need a view and a template
+touch lib/auth_web/views/session_view.ex
+```elixir
+defmodule AuthWeb.SessionView do
+  use AuthWeb, :view
+end
+
+```
+Now we need to template
+mkdir lib/auth_web/templates/session
+touch lib/auth_web/templates/session/new.html.eex
+```
+<h2> Login </h2>
+```
+mix test test/auth_web/controllers/session_controller_test.exs
+
+And great test passes we have a place for our form.  I'm going to leave the test like that, as I don't want the test to be too brittle if we change the form.  But I like having a simple that runs to check request for a new session is satisfied.

@@ -3,8 +3,12 @@ defmodule AuthWeb.UserControllerTest do
 
   alias Auth.Accounts
 
-  @create_attrs %{email: "some email", password_hash: "some password_hash"}
-  @update_attrs %{email: "some updated email", password_hash: "some updated password_hash"}
+  # @create_attrs %{email: "some email", password_hash: "some password_hash"}
+  # @update_attrs %{email: "some updated email", password_hash: "some updated password_hash"}
+  # @invalid_attrs %{email: nil, password_hash: nil}
+
+  @create_attrs %{email: "person@email.com", password: "password"}
+  @update_attrs %{email: "updated@email.com"}
   @invalid_attrs %{email: nil, password_hash: nil}
 
   def fixture(:user) do
@@ -60,7 +64,7 @@ defmodule AuthWeb.UserControllerTest do
       assert redirected_to(conn) == user_path(conn, :show, user)
 
       conn = get conn, user_path(conn, :show, user)
-      assert html_response(conn, 200) =~ "some updated email"
+      assert html_response(conn, 200) =~ "updated@email.com"
     end
 
     test "renders errors when data is invalid", %{conn: conn, user: user} do
